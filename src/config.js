@@ -1,1 +1,1 @@
-export const apiBaseUrl = "http://localhost:2022";
+export const apiBaseUrl = "https://food-serve-rahat.herokuapp.com";
