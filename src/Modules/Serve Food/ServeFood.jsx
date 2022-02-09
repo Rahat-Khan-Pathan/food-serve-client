@@ -129,7 +129,6 @@ const ServeFood = () => {
         const newDate = new Date(distribution.date);
         newDate.setHours(0,0,0,0);
         const data = {...distribution,studentid:distribution.studentid?._id,fooditemlist:foodItemsList,date:newDate.toISOString()};
-        console.log(data);
         axios({
             method: "POST",
             url: `${apiBaseUrl}/distribution/new`,
@@ -375,6 +374,7 @@ const ServeFood = () => {
                         <Grid item xs={1}>
                             <Button color="primary" disabled={currentView !== viewModesNew}
                                 onClick={() => {
+                                    if(!selectedFoodItem) return;
                                     const chck = foodItemsList.find(ct => ct?._id === selectedFoodItem?._id);
                                     if (!chck) {
                                         setFoodItemsList([...foodItemsList,selectedFoodItem]);
@@ -389,10 +389,10 @@ const ServeFood = () => {
                             <Paper component="ul" className={classes.root}>
                                 {foodItemsList.map((data) => {
                                     return (
-                                    <li key={data._id}>
+                                    <li key={data?._id}>
                                         <Chip
                                             color='primary'
-                                            label={data.name}
+                                            label={data?.name}
                                             onDelete={handleDelete(data)}
                                             className={classes.chip}
                                         />
@@ -456,7 +456,7 @@ const ServeFood = () => {
                                     <TableCell align="right">
                                     {
                                         row?.fooditemlist?.map(fd=> (
-                                            <Chip label={fd?.name} key={fd?._id} color="primary" style={{marginLeft:"0.5rem"}}></Chip>
+                                            <Chip label={fd?.name} key={fd?._id} color="primary" style={{marginLeft:"0.5rem"}} ></Chip>
                                         ))
                                     }
                                     </TableCell>
