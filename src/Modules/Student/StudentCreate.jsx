@@ -1,4 +1,4 @@
-import { Button, Collapse, IconButton, makeStyles,Paper,Grid,TextField, Box, TablePagination, FormControlLabel, Switch, Chip } from '@material-ui/core';
+import { Button, Collapse, IconButton, makeStyles,Paper,Grid,TextField, Box, TablePagination, FormControlLabel, Switch, Chip, Fade, CircularProgress, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@material-ui/core';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import React, { useEffect, useState } from 'react';
@@ -84,7 +84,10 @@ const StudentCreate = () => {
     const [allStudents,setAllStudents] = useState([]);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalStudent,setTotalStudent] = useState(0);
-    const [page, setPage] = React.useState(0);
+    const [page, setPage] = useState(0);
+    const [loading,setLoading] = useState(true);
+    const [open,setOpen] = useState(false);
+    const [deleteID,setDeleteID] = useState(null);
 
     // styles 
     const classes = useStyles();
@@ -197,6 +200,7 @@ const StudentCreate = () => {
           .then((res)=> {
             res.data.results ? setAllStudents(res.data.results) : setAllStudents([]);
             res.data.totalstudent ? setTotalStudent(res.data.totalstudent) : setTotalStudent(0);
+            setLoading(false);
           })
           .catch((err)=> {
             setMessage(err?.response?.data || "Couldn't Get All Students");
@@ -215,6 +219,7 @@ const StudentCreate = () => {
           .then((res)=> {
             setMessage("Student Deleted Successfully");
             getAllStudents(page,rowsPerPage);
+            setDeleteID(null);
           })
           .catch((err)=> {
             setMessage(err?.response?.data || "Couldn't Delete Student");
@@ -254,6 +259,29 @@ const StudentCreate = () => {
     },[])
     return (
         <div>
+            <Dialog
+                open={open}
+                onClose={() => setOpen(false)}
+                aria-labelledby="responsive-dialog-title"
+            >
+                <DialogTitle id="responsive-dialog-title">{"Confirmation Message"}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete this student?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button autoFocus onClick={() => setOpen(false)} color="primary">
+                        Disagree
+                    </Button>
+                    <Button onClick={() => {
+                        setOpen(false);
+                        if (deleteID) deleteStudent(deleteID);
+                    }} color="primary" autoFocus>
+                        Agree
+                    </Button>
+                </DialogActions>
+            </Dialog>
             <div style={{marginBottom: '1rem',display:'flex',alignItems:'center'}}>
                 <Button
                     size='small'
@@ -427,57 +455,74 @@ const StudentCreate = () => {
                             </TableRow>
                             </TableHead>
                             <TableBody>
-                            {   allStudents?.map((row) => (
+                            {   
+                            loading ?  
+                            <TableRow>
+                                <TableCell colSpan={7} align="center">
+                                    <Fade
+                                        in={loading}
+                                        style={{
+                                            transitionDelay: loading ? '80ms' : '0ms',
+                                        }}
+                                        unmountOnExit
+                                    >
+                                        <CircularProgress /> 
+                                    </Fade>
+                                </TableCell>
+                            </TableRow>
+                            :
+                            allStudents.length===0 ?
+                            <TableRow>
+                                <TableCell colSpan={7} align="center">No Data...</TableCell>
+                            </TableRow> :
+                            allStudents?.map((row) => (
                                 <TableRow key={row?._id} hover>
                                     <TableCell component="th" scope="row">
-                                        <Grid container spacing={1}>
-                                            <Grid item xs={2}>
-                                                <Tooltip title="Edit">
-                                                    <Button
-                                                        variant="contained"
-                                                        size="small"
+                                        <Box style={{display:"flex",justifyContent:"flex-start"}}>
+                                            <Tooltip title="Edit">
+                                                <Button
+                                                    style={{marginRight:"1rem"}}
+                                                    variant="contained"
+                                                    size="small"
+                                                    color="primary"
+                                                    onClick={()=> {
+                                                        setStudent(row);
+                                                        setCurrentView(viewModesEditable);
+                                                    }}
+                                                    >
+                                                    <IoIosPaper></IoIosPaper>
+                                                </Button>
+                                            </Tooltip>
+                                            <Tooltip title="Delete">
+                                                <Button
+                                                    style={{marginRight:"1rem"}}
+                                                    variant="contained"
+                                                    size="small"
+                                                    color="secondary"
+                                                    onClick={()=> {
+                                                        setDeleteID(row?._id);
+                                                        setOpen(true);
+                                                    }}
+                                                    >
+                                                    <AiFillDelete></AiFillDelete>
+                                                </Button>
+                                            </Tooltip>
+                                            <FormControlLabel 
+                                                control={
+                                                    <Switch
+                                                        size='small'
+                                                        data-testid="user-status"
+                                                        checked={row.status}
+                                                        onChange={(e) => {
+                                                            changeStudentStatus(row._id,e.target.checked);
+                                                        }}
+                                                        name="checkedB"
                                                         color="primary"
-                                                        onClick={()=> {
-                                                            setStudent(row);
-                                                            setCurrentView(viewModesEditable);
-                                                        }}
-                                                        >
-                                                        <IoIosPaper></IoIosPaper>
-                                                    </Button>
-                                                </Tooltip>
-                                            </Grid>
-                                            <Grid item xs={2}>
-                                                <Tooltip title="Delete">
-                                                    <Button
-                                                        variant="contained"
-                                                        size="small"
-                                                        color="secondary"
-                                                        onClick={()=> {
-                                                            deleteStudent(row?._id);
-                                                        }}
-                                                        >
-                                                        <AiFillDelete></AiFillDelete>
-                                                    </Button>
-                                                </Tooltip>
-                                            </Grid>
-                                            <Grid item xs={2}>
-                                                <FormControlLabel 
-                                                    control={
-                                                        <Switch
-                                                            size='small'
-                                                            data-testid="user-status"
-                                                            checked={row.status}
-                                                            onChange={(e) => {
-                                                                changeStudentStatus(row._id,e.target.checked);
-                                                            }}
-                                                            name="checkedB"
-                                                            color="primary"
-                                                        />
-                                                    }
-                                                    label={row.status? "Active" : "Inactive"}
-                                                />
-                                            </Grid>
-                                        </Grid>
+                                                    />
+                                                }
+                                                label={row.status? "Active" : "Inactive"}
+                                            />
+                                        </Box>
                                     </TableCell>
                                     <TableCell align="right">{row?.fullname}</TableCell>
                                     <TableCell align="right">{row?.roll}</TableCell>

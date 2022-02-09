@@ -1,4 +1,4 @@
-import { Button, Collapse, IconButton, makeStyles,Paper,Grid,TextField, Box, TablePagination } from '@material-ui/core';
+import { Button, Collapse, IconButton, makeStyles,Paper,Grid,TextField, Box, TablePagination, Fade, CircularProgress, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@material-ui/core';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import React, { useEffect, useState } from 'react';
@@ -81,6 +81,9 @@ const FoodCreate = () => {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalFoodItem,setTotalFoodItem] = useState(0);
     const [page, setPage] = React.useState(0);
+    const [loading,setLoading] = useState(true);
+    const [open,setOpen] = useState(false);
+    const [deleteID,setDeleteID] = useState(null);
 
     // styles 
     const classes = useStyles();
@@ -153,6 +156,7 @@ const FoodCreate = () => {
           .then((res)=> {
             res.data.results ? setAllFoodItems(res.data.results) : setAllFoodItems([]);
             res.data.totalfooditem ? setTotalFoodItem(res.data.totalfooditem) : setTotalFoodItem(0);
+            setLoading(false);
           })
           .catch((err)=> {
             setMessage(err?.response?.data || "Couldn't Get All Food Item");
@@ -171,6 +175,7 @@ const FoodCreate = () => {
           .then((res)=> {
             setMessage("Food Item Deleted Successfully");
             getAllFoodItems(page,rowsPerPage);
+            setDeleteID(null);
           })
           .catch((err)=> {
             setMessage(err?.response?.data || "Couldn't Delete Food Item");
@@ -192,6 +197,29 @@ const FoodCreate = () => {
     },[])
     return (
         <div>
+            <Dialog
+                open={open}
+                onClose={() => setOpen(false)}
+                aria-labelledby="responsive-dialog-title"
+            >
+                <DialogTitle id="responsive-dialog-title">{"Confirmation Message"}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete this food item?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button autoFocus onClick={() => setOpen(false)} color="primary">
+                        Disagree
+                    </Button>
+                    <Button onClick={() => {
+                        setOpen(false);
+                        if (deleteID) deleteFoodItem(deleteID);
+                    }} color="primary" autoFocus>
+                        Agree
+                    </Button>
+                </DialogActions>
+            </Dialog>
             <div style={{marginBottom: '1rem',display:'flex',alignItems:'center'}}>
                 <Button
                     size='small'
@@ -298,7 +326,7 @@ const FoodCreate = () => {
                 </Grid>
             </Paper>
             <Box style={{display:"flex",justifyContent:"center"}}>
-                <Paper style={{width:"60%",marginTop:"2rem"}}>
+                <Paper elevation={3} style={{width:"60%",marginTop:"2rem"}}>
                     <TableContainer style={{overflowY:"scroll",maxHeight:440}}>
                         <Table stickyHeader aria-label="sticky table" size='small'>
                             <TableHead style={{backgroundColor:"#aaa"}}>
@@ -309,43 +337,61 @@ const FoodCreate = () => {
                             </TableRow>
                             </TableHead>
                             <TableBody>
-                            {   allFoodItems?.map((row) => (
+                            {   
+                            loading ?  
+                            <TableRow>
+                                <TableCell colSpan={3} align="center">
+                                    <Fade
+                                        in={loading}
+                                        style={{
+                                            transitionDelay: loading ? '80ms' : '0ms',
+                                        }}
+                                        unmountOnExit
+                                    >
+                                        <CircularProgress /> 
+                                    </Fade>
+                                </TableCell>
+                            </TableRow>
+                            :
+                            allFoodItems.length===0 ?
+                            <TableRow>
+                                <TableCell colSpan={3} align="center">No Data...</TableCell>
+                            </TableRow> :
+                            allFoodItems?.map((row) => (
                                 <TableRow key={row?._id} hover>
                                     <TableCell component="th" scope="row">
-                                        <Grid container spacing={1}>
-                                            <Grid item xs={2}>
-                                                <Tooltip title="Edit">
-                                                    <Button
-                                                        variant="contained"
-                                                        size="small"
-                                                        color="primary"
-                                                        onClick={()=> {
-                                                            setFoodItem(row);
-                                                            setCurrentView(viewModesEditable);
-                                                        }}
-                                                        >
-                                                        <IoIosPaper></IoIosPaper>
-                                                    </Button>
-                                                </Tooltip>
-                                            </Grid>
-                                            <Grid item xs={2}>
-                                                <Tooltip title="Delete">
-                                                    <Button
-                                                        variant="contained"
-                                                        size="small"
-                                                        color="secondary"
-                                                        onClick={()=> {
-                                                            deleteFoodItem(row?._id);
-                                                        }}
-                                                        >
-                                                        <AiFillDelete></AiFillDelete>
-                                                    </Button>
-                                                </Tooltip>
-                                            </Grid>
-                                        </Grid>
+                                        <Box style={{display:"flex",justifyContent:"flex-start"}}>
+                                            <Tooltip title="Edit">
+                                                <Button
+                                                    style={{marginRight:"1rem"}}
+                                                    variant="contained"
+                                                    size="small"
+                                                    color="primary"
+                                                    onClick={()=> {
+                                                        setFoodItem(row);
+                                                        setCurrentView(viewModesEditable);
+                                                    }}
+                                                    >
+                                                    <IoIosPaper></IoIosPaper>
+                                                </Button>
+                                            </Tooltip>
+                                            <Tooltip title="Delete">
+                                                <Button
+                                                    variant="contained"
+                                                    size="small"
+                                                    color="secondary"
+                                                    onClick={()=> {
+                                                        setDeleteID(row?._id);
+                                                        setOpen(true);
+                                                    }}
+                                                    >
+                                                    <AiFillDelete></AiFillDelete>
+                                                </Button>
+                                            </Tooltip>
+                                        </Box>
                                     </TableCell>
                                     <TableCell align="right">{row?.name}</TableCell>
-                                    <TableCell align="right">{row?.price}</TableCell>
+                                    <TableCell align="right">{(row?.price).toFixed(2)}</TableCell>
                                 </TableRow>
                             ))}
                             </TableBody>

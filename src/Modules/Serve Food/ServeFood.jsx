@@ -1,4 +1,4 @@
-import { Button, Collapse, IconButton, makeStyles,Paper,Grid,TextField, Box, TablePagination, FormControlLabel, Switch, Chip, FormControl, InputLabel, Select, MenuItem } from '@material-ui/core';
+import { Button, Collapse, IconButton, makeStyles,Paper,Grid,TextField, Box, TablePagination, FormControlLabel, Switch, Chip, FormControl, InputLabel, Select, MenuItem, Fade, CircularProgress } from '@material-ui/core';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip } from '@material-ui/core';
 import { Alert, Autocomplete } from '@material-ui/lab';
 import React, { useEffect, useState } from 'react';
@@ -93,6 +93,7 @@ const ServeFood = () => {
     const [totalStudent,setTotalStudent] = useState(0);
     const [page, setPage] = React.useState(0);
     const [foodItemsList,setFoodItemsList] = useState([]);
+    const [loading,setLoading] = useState(true);
 
     // styles 
     const classes = useStyles();
@@ -161,9 +162,9 @@ const ServeFood = () => {
             data: JSON.stringify({})
           })
           .then((res)=> {
-              console.log(res.data.results);
             res.data.results ? setAllDistributions(res.data.results) : setAllDistributions([]);
             res.data.totaldistribution ? setTotalStudent(res.data.totaldistribution) : setTotalStudent(0);
+            setLoading(false);
           })
           .catch((err)=> {
             setMessage(err?.response?.data || "Couldn't Get All Distributions");
@@ -288,8 +289,8 @@ const ServeFood = () => {
                 </Collapse>
             </div>
             <Paper elevation={2} className={classes.paper}>
-                <Grid container spacing={2}>
-                    <Grid item xs={3}>
+                <Grid container spacing={2} style={{display:"flex",alignItems:"center"}} >
+                    <Grid item xs={6} sm={3}>
                         <Autocomplete
                             size="small"
                             disabled={currentView !== viewModesNew}
@@ -304,13 +305,13 @@ const ServeFood = () => {
                             renderInput={(params) => (
                             <TextField
                                 {...params}
-                                label="Choose Student Roll"
+                                label="Select Student Roll"
                                 variant="outlined"
                             />
                             )}
                         />
                     </Grid>
-                    <Grid item xs={3}>
+                    <Grid item xs={6} sm={3}>
                         <MuiPickersUtilsProvider utils={DateFnsUtils}>
                             <Grid container justifyContent="space-around">
                                 <KeyboardDatePicker
@@ -336,7 +337,7 @@ const ServeFood = () => {
                             </Grid>
                         </MuiPickersUtilsProvider>
                     </Grid>
-                    <Grid item xs={2}>
+                    <Grid item xs={4} sm={2}>
                         <FormControl variant="outlined" className={classes.formControl} size="small">
                             <InputLabel id="demo-simple-select-outlined-label">Shift</InputLabel>
                                 <Select
@@ -357,7 +358,7 @@ const ServeFood = () => {
                                 </Select>
                         </FormControl>
                     </Grid>
-                    <Grid item xs={3}>
+                    <Grid item xs={6} sm={3}>
                             <Autocomplete
                                 disabled={currentView !== viewModesNew}
                                 data-testid="option-autocomplete"
@@ -368,7 +369,7 @@ const ServeFood = () => {
                                 id="combo-box-demo"
                                 options={allFoodItems}
                                 getOptionLabel={(option) => option?.name}
-                                renderInput={(params) => <TextField {...params} label="Select Food Item" variant="outlined" />}
+                                renderInput={(params) => <TextField {...params} label="Select Food" variant="outlined" />}
                             />
                         </Grid>
                         <Grid item xs={1}>
@@ -419,21 +420,43 @@ const ServeFood = () => {
                             </TableRow>
                             </TableHead>
                             <TableBody>
-                            { allDistributions?.map((row) => (
+                            { 
+                            loading ?  
+                            <TableRow>
+                                <TableCell colSpan={8} align="center">
+                                    <Fade
+                                        in={loading}
+                                        style={{
+                                            transitionDelay: loading ? '80ms' : '0ms',
+                                        }}
+                                        unmountOnExit
+                                    >
+                                        <CircularProgress /> 
+                                    </Fade>
+                                </TableCell>
+                            </TableRow>
+                            :
+                            allDistributions.length===0 ?
+                            <TableRow>
+                                <TableCell colSpan={8} align="center">No Data...</TableCell>
+                            </TableRow> :
+                            allDistributions?.map((row) => (
                                 <TableRow key={row?._id} hover>
                                     <TableCell component="th" scope="row">{row?.student?.fullname}</TableCell>
                                     <TableCell align="right">{row?.student?.roll}</TableCell>
                                     <TableCell align="right">{row?.student?.class}</TableCell>
                                     <TableCell align="right">{row?.student?.hall}</TableCell>
                                     <TableCell align="right">{new Date(row?.date).toLocaleDateString()}</TableCell>
-                                    <TableCell align="right">{row?.shift}</TableCell>
+                                    <TableCell align="right">
+                                        <Chip label={row?.shift} style={row?.shift === "MORNING" ? {backgroundColor:"#ff5722",color:"white"} : row?.shift === "NOON" ? {backgroundColor:"#9c27b0",color:"white"} : {backgroundColor:"#795548",color:"white"} }></Chip>    
+                                    </TableCell>
                                     <TableCell align="right">
                                         <Chip label={row?.student?.status ? "Active" : "Inactive"} style={row?.student?.status ? {backgroundColor:"green",color:"white"} : {backgroundColor:"red",color:"white"}}></Chip>
                                     </TableCell>
                                     <TableCell align="right">
                                     {
                                         row?.fooditemlist?.map(fd=> (
-                                            <Chip label={fd?.name} color="primary"></Chip>
+                                            <Chip label={fd?.name} key={fd?._id} color="primary" style={{marginLeft:"0.5rem"}}></Chip>
                                         ))
                                     }
                                     </TableCell>
