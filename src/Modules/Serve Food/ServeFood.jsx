@@ -115,7 +115,7 @@ const ServeFood = () => {
             setOpenFailure(true);
             return;
         }
-        if(distribution.shift==="") {
+        if(distribution.shift==="" || distribution.shift === "NONE") {
             setMessage("Shift cannot be empty");
             setOpenFailure(true);
             return;
@@ -346,9 +346,7 @@ const ServeFood = () => {
                                     id="demo-simple-select-outlined"
                                     value={distribution.shift}
                                     onChange={(e)=> {
-                                        if(e.target.value !== "NONE") {
-                                            setDistribution({...distribution,shift:e.target.value})
-                                        }
+                                        setDistribution({...distribution,shift:e.target.value}); 
                                     }}
                                     label="Status"
                                 >
